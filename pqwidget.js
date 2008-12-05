@@ -1,6 +1,22 @@
 var pqjs = document.getElementsByTagName("script");
 pqjs = pqjs[pqjs.length - 1];
 
+var pqwidget,
+        serverUrl = "http://localhost:8080",
+        quizWrap,
+        itemDiv,
+        pqdiv,
+        frameUrl = serverUrl + "/quiz_frame",
+        itemTick = 0,
+        introDone = false,
+        i1complete = false,
+        proficiencies =
+        [
+                "Freebase",
+                "Building Webapps",
+                "Startup Financing"
+        ];
+
 var introItems =
 [
         {url: 'http://localhost:8080/intro/?page=intro', item_type:'intro', answers: ['Take This Quiz'], noSkip: true, vendor: "{{ vendor_name }}"},
@@ -9,7 +25,6 @@ var introItems =
         {url: 'http://localhost:8080/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
 ]
 
-var pqwidget, quizWrap, itemDiv, pqdiv, frameUrl = "http://localhost:8080/quiz_frame", itemTick = 0, introDone = false;;
 
 function addScript(src)
 {
@@ -93,6 +108,7 @@ function waitForJQ()
 
 function loadNextItem()
 {
+        var url = introDone ? introItems[itemTick].url + "&_t=" + (new Date()).valueOf() : ""
         $.ajax(
         {
                 url: introItems[itemTick].url + "&_t=" + (new Date()).valueOf(),
@@ -130,6 +146,89 @@ function loadNextItem()
                                                 .find('.answertext')
                                                 .html(quizItem.answers[i]);
                                 }
+
+                                if(quizItem.timed)
+                                        $('#quiz_timer').show();
+                                else
+                                        $('#quiz_timer').hide();
+                               
+                                if(!quizItem.noSkip)
+                                        $('#skip').show();
+                                else
+                                        $('#skip').hide();
+
+                                /*
+                                 * Setup special cases for instructions here
+                                 * does not work well right after ajax load
+                                 * and does not allow skipping instruction 1 o 2
+                                 */
+
+				if(quizItem.item_type == "intro")
+                                {
+					if (quizItem.vendor.length > 1){ $('p#employer').find('b').text(quizItem.vendor); }
+				}
+                                	
+                                if(quizItem.item_type == "instructions")
+                                {
+                                	
+                                        var i1mouseOverCount = 0;
+                                        var i1mouseOver = function()
+                                        {
+                                                // unbind is to prevent incrementing on the same button
+                                                $(this).unbind('mouseover',i1mouseOver);
+                                                if(++i1mouseOverCount >= 2)
+                                                {
+                                                        $('#example_1,#example_2').toggle();
+                                                        i1complete = true;
+                                                        i1mouseOverCount = null;
+                                                }
+                                        };
+
+                                        $("#quiz_answers .answer").mouseover(i1mouseOver);
+                                }
+                                
+				if(quizItem.item_type == "instructions2")
+                                {
+                                       $('a#skip').hide(); 
+                                }
+
+                                if(quizItem.item_type == "begin_quiz")
+                                {
+                                        // 
+                                        introDone = true;
+
+                                        var p = {};
+                                        for(i in p)
+                                                $("#proficiency_choices").append('<input type="checkbox" value="' + i + '" checked /><span class="proficiency">' + i + '</span><br />');
+                                }
+                                
+                                      if(quizItem.item_type == "quiz_item")
+                                {
+                                              $('#blank').empty();
+                                              $('#quiz_content').css({opacity: 0});
+										  }   
+               				if(quizItem.item_type == "quiz_complete")
+                                        {
+                                        $('div#confirm').hide();
+                                        // signup binding
+                                        $('div.form_proceed').click(function()
+                                        {
+                                                var current_id  = $(this).attr('id');
+                                                var next_id  = parseInt(current_id) + 1;
+                                                
+                                                if ($('form.signup').find('ul#' + next_id).length == 0)
+                                                {
+                                                        Register(document.signup);
+                                                        return;
+                                                }
+                                                $('form.signup').find('ul#' + current_id).fadeOut(200, function()
+                                                {
+                                                        $('form.signup').find('ul#' + next_id).fadeIn(200);
+                                                });
+                                                
+                                                $(this).attr('id', next_id);
+                                        });      
+                                }                
                         };
 
                         if(!quizWrap)
@@ -274,7 +373,8 @@ function pqLoad()
                                                 })
                                                 .click(function(e)
                                                 {
-                                                        if ($(this).hasClass('disabled')){ return false; }
+                                                        if ($(this).hasClass('disabled'))
+                                                                return false;
                                               
                                                         itemTick++;
                                                         loadNextItem();
