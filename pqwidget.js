@@ -13,13 +13,13 @@ var iso = function($)
         {
                 introItems:
                 [
-                        {url: 'http://localhost:8080/intro/?page=intro', item_type:'intro', answers: ['Take This Quiz'], noSkip: true, vendor: "{{ vendor_name }}"},
+                        {url: 'http://localhost:8080/intro/?page=intro', item_type:'intro', answers: ['Take This Quiz'], noSkip: true, vendor: "Plopquiz"},
                         {url: 'http://localhost:8080/intro/?page=instructions', item_type:'instructions', answers: [ 'dog ate', 'web made' ], noSkip: true},
                         {url: 'http://localhost:8080/intro/?page=instructions2', item_type:'instructions2', answers: [ 'compilers', 'interpreters' ], timed: "instructions2", timeout: 'reset'},
                         {url: 'http://localhost:8080/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
                 ],
                 quizitemList: Array(),
-                currentItem: 3,
+                currentItem: 0,
                 settings:
                 {
                         serverUrl: "http://localhost:8080",
