@@ -28,6 +28,7 @@
 
 div#quiz_overlay 
 {
+        display: none;
         background-color: #333;
         height: 100%;
         left: 0px;
