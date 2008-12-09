@@ -169,8 +169,6 @@ var iso = function($)
                                 })
                                 .click(function(e)
                                 {
-                                	if ($(this).hasClass('disabled')){ return false; }
-                              
                                        $.plopquiz.submitAnswer($(this).find('div.answertext').text().replace(/\n/g,"")); 
                                 })
                                 .each(function()
@@ -216,13 +214,9 @@ var iso = function($)
                                 {
 					/* some settings... */
 					$('#quiz_content').attr('class', quizItem.item_type + '_content');
-					
 					$('#quiz_answers').attr('class', quizItem.item_type + '_answers');
-					
 					$('#quiz_inner').attr('class', quizItem.item_type + '_quiz_inner');
-					
 					$('.quiz_selection').attr('id', quizItem.item_type + '_quiz_selection');
-					
 					
 					if (quizItem.item_type == 'intro' || quizItem.item_type == 'begin_quiz' || quizItem.item_type == 'quiz_complete'){  
 						var this_answer = $('#quiz_answers #confirm');
@@ -261,7 +255,6 @@ var iso = function($)
                                 	
                                 if(quizItem.item_type == "instructions")
                                 {
-                                	
                                         var i1mouseOverCount = 0;
                                         var i1mouseOver = function()
                                         {
@@ -283,7 +276,6 @@ var iso = function($)
                                        $('a#skip').hide(); 
                                 }
 
-
                                 if(quizItem.item_type == "begin_quiz")
                                 {
 					var p = {};
@@ -292,7 +284,7 @@ var iso = function($)
                                                         .append('<input type="checkbox" value="' + $.plopquiz.proficiencies[i] + '" checked /><span class="proficiency">' + $.plopquiz.proficiencies[i] + '</span><br />');
                                 }
                                 
-                                      if(quizItem.item_type == "quiz_item")
+                                if(quizItem.item_type == "quiz_item")
                                 {
                                         $('#blank').empty();
                                         $('#quiz_content').css({opacity: 0});
@@ -309,7 +301,6 @@ var iso = function($)
                                                 
                                                 if ($('form.signup').find('ul#' + next_id).length == 0){ Register(document.signup);   return;}
                                                 $('form.signup').find('ul#' + current_id).fadeOut(200, function(){ $('form.signup').find('ul#' + next_id).fadeIn(200); });
-                                                
                                                 
                                                 $(this).attr('id', next_id);
                                         });      
@@ -345,18 +336,20 @@ var iso = function($)
                         break;
 
                         case "instructions2":
+                                if(!$.plopquiz.settings.instructions.skip_segment)
+                                {
+                                        $.plopquiz.settings.instructions.i2timedOut = true;
+                                        $('.timer_bar').stop();
+                                        $('.timer_bar').css('width', '100%'); 
+                                        $('#example_1,#example_3').hide('slow');
+                                        $('#example_2').show('slow');
+                                        $('a#skip').show();
+                                        //click binding
+                                        $('#quiz_answers').find('#answer1,#answer2').addClass('disabled');
+                                        $.plopquiz.settings.instructions.skip_segment = "true";
 
-                                if(!$.plopquiz.settings.instructions.skip_segment){
-                               $.plopquiz.settings.instructions.i2timedOut = true;
-                               $('.timer_bar').stop();
-                                $('.timer_bar').css('width', '100%'); 
-                                $('#example_1,#example_3').hide('slow');
-                                $('#example_2').show('slow');
-                                $('a#skip').show();
-                                //click binding
-                              $('#quiz_answers').find('#answer1,#answer2').addClass('disabled');
-                                $.plopquiz.settings.instructions.skip_segment = "true";
-                                        return; }
+                                        return;
+                                }
                                 else
                                         $.plopquiz.loadItem();
                                        $('#quiz_answers').find('#answer1,#answer2').removeClass('disabled');
@@ -368,7 +361,6 @@ var iso = function($)
 
                                 $('#proficiency_choices input:checked').each(function() { $.plopquiz.settings.proficiencies.push($(this).val()); });
                                 $('.timer_bar').css('width', '100%'); 
-
 
                                 $.ajax(
                                 {
@@ -414,7 +406,8 @@ var iso = function($)
                                         },
                                         success: function(obj)
                                         {
-                                                $.plopquiz.loadItem(obj["quiz_item"]);
+                                                console.log("quiz_item", obj);
+                                                $.plopquiz.loadItem($.extend({timed:true,"item_type":"quiz_item"}, obj["quiz_item"]));
                                         }
                                 });
 
@@ -470,21 +463,17 @@ function addStyle(src)
         pqjs.parentNode.appendChild(s);
 }
 
-        if(window.jQuery)
-        {
-                $(function()
-                {
-                        $("#pqwidget").click($.plopquiz.start);
-                });
-                pqLoad();
-        }
-        else
-        {
-                addScript("/pqwidget/jquery.js");
-                addStyle("/pqwidget/pqwidget.css");
+if(window.jQuery)
+{
+        pqLoad();
+}
+else
+{
+        addScript("/pqwidget/jquery.js");
+        addStyle("/pqwidget/pqwidget.css");
 
-                setTimeout(waitForJQ, 60);
-        }
+        setTimeout(waitForJQ, 60);
+}
 
 function waitForJQ()
 {
