@@ -19,11 +19,11 @@ var iso = function($)
                         {url: '/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
                 ],
                 quizitemList: Array(),
-                currentItem: 3,
+                currentItem: 0,
                 settings:
                 {
                         serverUrl: "http://localhost:8080",
-                        autoStart: true, // debugging only
+                        autoStart: false, // debugging only
                         initDone: false,
                         startTime: (new Date()),
                         timeoutDuration: 20000,
