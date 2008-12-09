@@ -65,12 +65,14 @@ var iso = function($)
                         dataType: "jsonp",
                         success: function(html,status)
                         {
-                                $('body').append(html);
+                                $("body").append(html);
+
+                                $("#quiz_overlay").css('height', $(document).height());
 
                                 $('#quiz_wrap')
                                         .bind('quizstarting', function()
                                         {
-                                                $(this).show().find("*").show();
+                                                $(this).show();
                                         })
                                         .bind('quizclosing', function()
                                         {
@@ -186,7 +188,6 @@ var iso = function($)
 
         $.plopquiz.start = function()
         {
-                $.event.trigger('quizstarting');
                 $.plopquiz.loadItem();
         }; // $.plopquiz.start
 
@@ -306,6 +307,7 @@ var iso = function($)
                                         });      
                                 }                
 
+                                $.event.trigger('quizstarting');
 
                                 // short delay to ensure everything is loaded
                                 setTimeout(function()
