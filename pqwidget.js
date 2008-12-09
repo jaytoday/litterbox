@@ -19,11 +19,11 @@ var iso = function($)
                         {url: '/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
                 ],
                 quizitemList: Array(),
-                currentItem: 0,
+                currentItem: 3,
                 settings:
                 {
                         serverUrl: "http://localhost:8080",
-                        autoStart: false, // debugging only
+                        autoStart: true, // debugging only
                         initDone: false,
                         startTime: (new Date()),
                         timeoutDuration: 20000,
@@ -300,8 +300,35 @@ var iso = function($)
                                                 var current_id  = $(this).attr('id');
                                                 var next_id  = parseInt(current_id) + 1;
                                                 
-                                                if ($('form.signup').find('ul#' + next_id).length == 0){ Register(document.signup);   return;}
-                                                $('form.signup').find('ul#' + current_id).fadeOut(200, function(){ $('form.signup').find('ul#' + next_id).fadeIn(200); });
+                                                if ($('form.signup').find('ul#' + next_id).length == 0)
+                                                {
+                                                        var args = {};
+                                                        var aargs = Array("name", " email", " occupation", " work_status", " webpage", " loc")
+
+                                                        for(var i in aargs)
+                                                                args["arg" + i] = "\"" + $("#" + aargs[i]).val() + "\"";
+
+                                                        $.ajax(
+                                                        {
+                                                                url: $.plopquiz.settings.serverUrl + "/quiztaker/rpc",
+                                                                dataType: "jsonp",
+                                                                data: $.extend(
+                                                                {
+                                                                        action: "Register",
+                                                                }, args),
+                                                                success: function(obj)
+                                                                {
+                                                                        console.log(obj);
+                                                                }
+                                                        });
+
+                                                        return;
+                                                }
+
+                                                $('form.signup').find('ul#' + current_id).fadeOut(200, function()
+                                                {
+                                                        $('form.signup').find('ul#' + next_id).fadeIn(200);
+                                                });
                                                 
                                                 $(this).attr('id', next_id);
                                         });      
@@ -408,8 +435,14 @@ var iso = function($)
                                         },
                                         success: function(obj)
                                         {
-                                                console.log("quiz_item", obj);
-                                                $.plopquiz.loadItem($.extend({timed:true,"item_type":"quiz_item"}, obj["quiz_item"]));
+                                                var q = obj["quiz_item"];
+
+                                                if(q === false)
+                                                {
+                                                        return $.plopquiz.loadItem({url: "/intro/?page=quiz_complete", item_type:"quiz_complete", noSkip: true, answers: [ "Submit" ]});
+                                                }
+
+                                                $.plopquiz.loadItem($.extend({timed:true,"item_type":"quiz_item"}, q));
                                         }
                                 });
 
