@@ -983,6 +983,9 @@ margin-top:10px !important;
         width:95%;
 }
 
+#quiz_wrap div#example_1 div{
+margin-bottom: 13px;
+}
 
 #quiz_wrap div.quiz_description_text
 {
