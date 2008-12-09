@@ -13,17 +13,17 @@ var iso = function($)
         {
                 introItems:
                 [
-                        {url: 'http://localhost:8080/intro/?page=intro', item_type:'intro', answers: ['Take This Quiz'], noSkip: true, vendor: "Plopquiz"},
-                        {url: 'http://localhost:8080/intro/?page=instructions', item_type:'instructions', answers: [ 'dog ate', 'web made' ], noSkip: true},
-                        {url: 'http://localhost:8080/intro/?page=instructions2', item_type:'instructions2', answers: [ 'compilers', 'interpreters' ], timed: "instructions2", timeout: 'reset'},
-                        {url: 'http://localhost:8080/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
+                        {url: '/intro/?page=intro', item_type:'intro', answers: ['Take This Quiz'], noSkip: true, vendor: "Plopquiz"},
+                        {url: '/intro/?page=instructions', item_type:'instructions', answers: [ 'dog ate', 'web made' ], noSkip: true},
+                        {url: '/intro/?page=instructions2', item_type:'instructions2', answers: [ 'compilers', 'interpreters' ], timed: "instructions2", timeout: 'reset'},
+                        {url: '/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
                 ],
                 quizitemList: Array(),
-                currentItem: 0,
+                currentItem: 3,
                 settings:
                 {
                         serverUrl: "http://localhost:8080",
-                        autoStart: false, // debugging only
+                        autoStart: true, // debugging only
                         initDone: false,
                         startTime: (new Date()),
                         timeoutDuration: 20000,
@@ -125,11 +125,12 @@ var iso = function($)
 											if(quizItem.timed)
 												$.plopquiz.specialTimers[quizItem.timed]();
 
-											$(self).stop();
-										      return reset();
+                                                                                        $(self).stop();
+                                                                                        
+                                                                                        return reset();
 										}
 
-										$.plopquiz.submitAnswer(quizItem.timed, quizItem);
+										$.plopquiz.submitAnswer("skip");
 									},
 									duration: $.plopquiz.settings.timeoutDuration,
 									easing: 'linear'
@@ -158,9 +159,7 @@ var iso = function($)
 
 					$('#blank').html($('.answertext', this).text().replace(/\ /g, "&nbsp;"))
 					//.css({'padding': '0px 0px'})
-					.css({'width': '100px'})
-					;
-                                        
+					.css({'width': '100px'});                                        
                                 },
                                 function()
                                 {
@@ -195,20 +194,20 @@ var iso = function($)
 
         $.plopquiz.loadItem = function(quizItem)
         {
+                var quizItem = $.plopquiz.quizItem = ((quizItem && quizItem.answers) ? quizItem : $.plopquiz.fetchNextItem());
 
-                var quizItem = $.plopquiz.quizItem = (quizItem ? quizItem : $.plopquiz.fetchNextItem());
                 if(!quizItem)
                         return;
 
-                console.log(quizItem);
-                
+                quizItem["url"] = quizItem.url ? quizItem.url : "/quiz_item/?token=" + $.plopquiz.settings.sessionToken;
+
                 $.event.trigger('loadingQuizItem');
                 $.ajax({
                         url: $.plopquiz.settings.serverUrl + quizItem.url,
                         dataType: "jsonp",
                         success: function(html, s)
                         {
-                                $('#quiz_content').css({opacity: 0}).html(html).animate({opacity: 1.0}, 0);
+                                $('#quiz_content').html(html);
 
                                 $('#quiz_answers .answer')
                                         .hide()
@@ -330,7 +329,7 @@ var iso = function($)
                 });
         };
 
-        $.plopquiz.submitAnswer = function(answer, quizItem)
+        $.plopquiz.submitAnswer = function(answer)
         {
                 $.event.trigger("submitingAnswer");
                 // check the answer for special cases
@@ -342,7 +341,7 @@ var iso = function($)
                                 if(!$.plopquiz.settings.instructions.i1complete)
                                         return;
                                 else
-                                        $.plopquiz.loadItem($.plopquiz.currentItem, quizItem);
+                                        $.plopquiz.loadItem();
                         break;
 
                         case "instructions2":
@@ -359,21 +358,25 @@ var iso = function($)
                                 $.plopquiz.settings.instructions.skip_segment = "true";
                                         return; }
                                 else
-                                        $.plopquiz.loadItem($.plopquiz.currentItem);
+                                        $.plopquiz.loadItem();
                                        $('#quiz_answers').find('#answer1,#answer2').removeClass('disabled');
                         break;
 
                         case "begin_quiz":
+                                // clear out proficiencies in case its a restart
+                                $.plopquiz.settings.proficiencies = Array();
+
                                 $('#proficiency_choices input:checked').each(function() { $.plopquiz.settings.proficiencies.push($(this).val()); });
                                 $('.timer_bar').css('width', '100%'); 
 
+
                                 $.ajax(
                                 {
-                                        url: $.plopquiz.settings.serverUrl + "/quiztaker/rpc?action=start_quiz",
+                                        url: $.plopquiz.settings.serverUrl + "/quiztaker/rpc",
                                         dataType: "jsonp",
                                         data:
                                         {
-                                                action: "",
+                                                action: "start_quiz",
                                                 arg0: "[\"" + $.plopquiz.settings.proficiencies.join("\",\"") + "\"]"
                                         },
                                         success: function(rpc)
@@ -393,12 +396,28 @@ var iso = function($)
                         break;
 
                         case "quiz_item":
-                         // ajax call to submit -- (answer, key, vendor)
-                         var this_item = $.plopquiz.quizItem;
-                         var timer_status = $('.timer_bar').width()/$.plopquiz.settings.timer_width;
-                         SubmitScore(answer, timer_status, this_item.key, this_item.vendor);
+                                // ajax call to submit -- (answer, key, vendor)
+                                var this_item = $.plopquiz.quizItem;
+                                var timer_status = $('.timer_bar').width()/$.plopquiz.settings.timer_width;
 
-                                $.plopquiz.loadItem();
+                                $.ajax(
+                                {
+                                        url: $.plopquiz.settings.serverUrl + "/quiztaker/rpc",
+                                        dataType: "jsonp",
+                                        data:
+                                        {
+                                                action: "continue_quiz",
+                                                arg0: "\"" + answer + "\"",
+                                                arg1: timer_status,
+                                                arg2: "\"" + $.plopquiz.settings.sessionToken + "\"",
+                                                arg3: "\"\""
+                                        },
+                                        success: function(obj)
+                                        {
+                                                $.plopquiz.loadItem(obj["quiz_item"]);
+                                        }
+                                });
+
                                 $('.timer_bar').css('width', '100%');
                         break;
                         
@@ -419,7 +438,8 @@ var iso = function($)
                 return {
                         "url": "/quiz_item/?token=" + $.plopquiz.settings.sessionToken,
                         "item_type": "quiz_item",
-                        "answers": $.plopquiz.proficiencies.answers
+                        "answers": $.plopquiz.proficiencies.answers,
+                        "timed": true
                 };
         }
 
