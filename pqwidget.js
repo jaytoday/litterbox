@@ -19,11 +19,11 @@ var iso = function($)
                         {url: '/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
                 ],
                 quizitemList: Array(),
-                currentItem: 3,
+                currentItem: 0,
                 settings:
                 {
                         serverUrl: "http://localhost:8080",
-                        autoStart: true, // debugging only
+                        autoStart: false, // debugging only
                         initDone: false,
                         startTime: (new Date()),
                         timeoutDuration: 20000,
@@ -63,6 +63,7 @@ var iso = function($)
                 $.ajax({
                         url: $.plopquiz.settings.serverUrl + '/quiz_frame',
                         dataType: "jsonp",
+                        error: console.log,
                         success: function(html,status)
                         {
                                 $("body").append(html);
@@ -99,7 +100,7 @@ var iso = function($)
                                                 // reset and start timer.
                                                 var reset = function()
                                                 {
-                                                      $('.timer_inner', self).stop();
+                                                        $('.timer_inner', self).stop();
                                                         
                                                         $('.timer_inner', self)
                                                                 .css('width', '100%');
@@ -143,11 +144,11 @@ var iso = function($)
                                         })
                                         .bind('loadingQuizItem', function()
                                         {
-                                                $(this).stop();
+                                                $('.timer_inner', this).stop();
                                         })
                                         .bind('submitingAnswer', function()
                                         {
-                                                $(this).stop();
+                                                $('.timer_inner', this).stop();
                                         });
 
                                
@@ -183,7 +184,35 @@ var iso = function($)
                         }
                 });
 
-                $('#pqwidget').click($.plopquiz.start);
+                var jsonpcallback = false;
+
+                for(var i in window)
+                {
+                        if(i.substring(0,5) == "jsonp")
+                                jsonpcallback = i;
+                }
+                
+                if(jsonpcallback)
+                        var timewatch = setTimeout(function()
+                        {
+                                if(window[jsonpcallback] != "undefined")
+                                        $("#pqwidget").append(
+                                                $("<a href=\"http://www.plopquiz.com\">Visit PlopQuiz</a>").hide().fadeIn()
+                                        );
+                        }, 6000);
+
+                $("script").each(function()
+                {
+                        if(this.src.indexOf(jsonpcallback) > -1)
+                                this.onload = function()
+                                {
+                                        clearTimeout(timewatch);
+
+                                        $("#pqwidget").append(
+                                                $("<div id\"takeQuiz\">Take PlopQuiz</div>").click($.plopquiz.start)
+                                        );
+                                }
+                });
         }; // $.plopquiz.init
 
         $.plopquiz.start = function()
@@ -480,12 +509,29 @@ var iso = function($)
 var pqjs = document.getElementsByTagName("script");
 pqjs = pqjs[pqjs.length - 1];
 
-function addScript(src)
+function addScript(src, id)
 {
         var s = document.createElement("script");
         s.src = src;
         s.rel = "javascript";
         s.type = "text/javascript";
+
+        var timeout = function()
+        {
+                console.log('failed to load ' + s.src);
+        }
+
+        // six second timeout before throwing error
+        setTimeout(function()
+        {
+                timeout();
+        }, 6000);
+
+        s.onload = function()
+        {
+                timeout = function() {};
+        }
+
         pqjs.parentNode.appendChild(s);
 }
 
