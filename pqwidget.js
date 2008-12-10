@@ -156,12 +156,10 @@ var iso = function($)
 
                                 $('#quiz_answers .answer').hover(function()
                                 {
-                                	if ($(this).attr('id') == 'skip')
-						return;
-					blank_width = 11 * $('.answertext', this).text().length; //todo: multiplier may need adjustment
-					console.log(blank_width + 'px !important');
+                                	if ($(this).attr('id') == 'skip')  return;
+					var blank_width = 11 * $('.answertext', this).text().length; //todo: multiplier may need adjustment
 					$('#blank').html($('.answertext', this).text().replace(/\ /g, "&nbsp;"))
-					.css("cssText", "width: " + blank_width + "px !important;");                                         
+					.css("cssText", "width: " + blank_width + "px !important;");                                        
                                 },
                                 function()
                                 {
