@@ -158,10 +158,10 @@ var iso = function($)
                                 {
                                 	if ($(this).attr('id') == 'skip')
 						return;
-
+					blank_width = 11 * $('.answertext', this).text().length; //todo: multiplier may need adjustment
+					console.log(blank_width + 'px !important');
 					$('#blank').html($('.answertext', this).text().replace(/\ /g, "&nbsp;"))
-					//.css({'padding': '0px 0px'})
-					.css({'width': '100px'});                                        
+					.css("cssText", "width: " + blank_width + "px !important;");                                         
                                 },
                                 function()
                                 {
