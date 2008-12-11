@@ -19,11 +19,11 @@ var iso = function($)
                         {url: '/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
                 ],
                 quizitemList: Array(),
-                currentItem: 0,
+                currentItem: 3,
                 settings:
                 {
                         serverUrl: "http://localhost:8080",
-                        autoStart: false, // debugging only
+                        autoStart: true, // debugging only
                         initDone: false,
                         startTime: (new Date()),
                         timeoutDuration: 20000,
@@ -91,7 +91,7 @@ var iso = function($)
                                 });
 
                                 $('#quiz_timer')
-                                        .bind('quizItemLoaded', function(event, quizItem)
+                                        .bind('startTimer', function(event, quizItem)
                                         {
                                                 var self = this;
                                                 if(!quizItem || !quizItem.timed || $.plopquiz.settings.noTimer)
@@ -109,11 +109,6 @@ var iso = function($)
 								{
 									$.plopquiz.settings.timer_width = $('.timer_bar').width(); // to calculate score
 									$('#quiz_answers').find('div').addClass('disabled');
-									$('.timer_inner', self).animate({opacity: 1.0}, 2000, function()
-									{
-										$('#quiz_content').animate({opacity: 1}, 1000);
-										$('#quiz_answers').find('div').removeClass('disabled');
-									});
 								}
                                                                 
                                                                 $('.timer_inner', self).animate(
@@ -215,7 +210,10 @@ var iso = function($)
 
         $.plopquiz.start = function()
         {
-                $.plopquiz.loadItem();
+                if($("#quiz_wrap").length > 0)
+                        $.plopquiz.loadItem();
+                else
+                        setTimeout($.plopquiz.start, 600);
         }; // $.plopquiz.start
 
         $.plopquiz.loadItem = function(quizItem)
@@ -315,7 +313,24 @@ var iso = function($)
                                 if(quizItem.item_type == "quiz_item")
                                 {
                                         $('#blank').empty();
-                                        $('#quiz_content').css({opacity: 0});
+                                        $('#quiz_content')
+                                                .css('opacity', 0)
+                                                .bind("quizItemLoaded", function(e, quizItem)
+                                                {
+                                                        $('#quiz_content').animate(
+                                                        {
+                                                                opacity: 1
+                                                        },
+                                                        {
+                                                                duration: 1000,
+                                                                complete: function()
+                                                                {
+                                                                        $.event.trigger("startTimer", [ quizItem ]);
+                                                                }
+                                                        });
+                                                        $('#quiz_answers').find('div').removeClass('disabled');
+
+                                                });
                                 }
 
                                 if(quizItem.item_type == "quiz_complete")
