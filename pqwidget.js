@@ -532,10 +532,13 @@ var iso = function($)
 var pqjs = document.getElementsByTagName("script");
 pqjs = pqjs[pqjs.length - 1];
 
-function addScript(src, id)
+var widgetSource = pqjs.src.substring(0, pqjs.src.lastIndexOf("/") + 1);
+
+// script should be plain filename ( jqwidget.js not /loc/script.js )
+function addScript(script, id)
 {
         var s = document.createElement("script");
-        s.src = src;
+        s.src = widgetSource + script;
         s.rel = "javascript";
         s.type = "text/javascript";
 
@@ -561,11 +564,13 @@ function addScript(src, id)
 function addStyle(src)
 {
         var s = document.createElement("link");
-        s.href = src;
+        s.href = widgetSource + src;
         s.rel = "stylesheet";
         s.type = "text/css";
         pqjs.parentNode.appendChild(s);
 }
+
+addStyle("pqwidget.css");
 
 if(window.jQuery)
 {
@@ -573,8 +578,7 @@ if(window.jQuery)
 }
 else
 {
-        addScript("/pqwidget/jquery.js");
-        addStyle("/pqwidget/pqwidget.css");
+        addScript("jquery.js");
 
         setTimeout(waitForJQ, 60);
 }
