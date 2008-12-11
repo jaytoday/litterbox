@@ -90,8 +90,8 @@ var iso = function($)
                                         //window.location = "/preview/";
                                 });
 
-                                $('#quiz_timer')
-                                        .bind('startTimer', function(event, quizItem)
+                                $("#quiz_timer")
+                                        .bind("startTimer", function(event, quizItem)
                                         {
                                                 var self = this;
                                                 if(!quizItem || !quizItem.timed || $.plopquiz.settings.noTimer)
@@ -165,12 +165,33 @@ var iso = function($)
                                 })
                                 .click(function(e)
                                 {
-                                       $.plopquiz.submitAnswer($(this).find('div.answertext').text().replace(/\n/g,"")); 
+                                        if($(this).data("disabled") != true)
+                                                $.plopquiz.submitAnswer($(this).find('div.answertext').text().replace(/\n/g,"")); 
+                                        
+                                        $.event.trigger("disableAnswers");
                                 })
-                                .each(function()
+                                .bind("disableAnswers", function()
                                 {
-                                        //$(this).attr('href', "#" + $(this).attr('id'));
+                                        $(this).data("disabled", true);
                                 });
+
+                                $("#quiz_content")
+                                        .bind("quizItemLoaded", function(e, quizItem)
+                                        {
+                                                $('#quiz_content').animate(
+                                                {
+                                                        opacity: 1
+                                                },
+                                                {
+                                                        duration: 1000,
+                                                        complete: function()
+                                                        {
+                                                                $.event.trigger("startTimer", [ quizItem ]);
+                                                        }
+                                                });
+                                                $('#quiz_answers').find('div').removeClass('disabled');
+
+                                        });
 
                                 if($.plopquiz.settings.autoStart)
                                         $.plopquiz.start();
@@ -231,7 +252,8 @@ var iso = function($)
                         dataType: "jsonp",
                         success: function(html, s)
                         {
-                                $('#quiz_content').html(html);
+                                $('#quiz_content')
+                                        .html(html);
 
                                 $('#quiz_answers .answer')
                                         .hide()
@@ -254,19 +276,20 @@ var iso = function($)
 
 					this_answer
 						.show()
-						.find('.answertext')
+                                                .data("disabled", false)
+						.find(".answertext")
 						.html(quizItem.answers[i]);
                                 }
 
                                 if(quizItem.timed)
-                                        $('#quiz_timer').show();
+                                        $("#quiz_timer").show();
                                 else
-                                        $('#quiz_timer').hide();
+                                        $("#quiz_timer").hide();
                                
                                 if(!quizItem.noSkip)
-                                        $('#skip').show();
+                                        $("#skip").show();
                                 else
-                                        $('#skip').hide();
+                                        $("#skip").hide();
 
                                 /*
                                  * Setup special cases for instructions here
@@ -314,23 +337,7 @@ var iso = function($)
                                 {
                                         $('#blank').empty();
                                         $('#quiz_content')
-                                                .css('opacity', 0)
-                                                .bind("quizItemLoaded", function(e, quizItem)
-                                                {
-                                                        $('#quiz_content').animate(
-                                                        {
-                                                                opacity: 1
-                                                        },
-                                                        {
-                                                                duration: 1000,
-                                                                complete: function()
-                                                                {
-                                                                        $.event.trigger("startTimer", [ quizItem ]);
-                                                                }
-                                                        });
-                                                        $('#quiz_answers').find('div').removeClass('disabled');
-
-                                                });
+                                                .css('opacity', 0);
                                 }
 
                                 if(quizItem.item_type == "quiz_complete")
