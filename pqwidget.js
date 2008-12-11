@@ -3,6 +3,9 @@
 
 */
 
+// this is a modified version of the quiz from the main site
+// at some point they should both be able to run from the exact script
+// the widget version will include the widget bootstrapper
 var iso = function($)
 {
 	var opts = {}, 
@@ -11,6 +14,7 @@ var iso = function($)
 
         $.plopquiz =
         {
+                // intro and instruction hard coded items
                 introItems:
                 [
                         {url: '/intro/?page=intro', item_type:'intro', answers: ['Take This Quiz'], noSkip: true, vendor: "Plopquiz"},
@@ -19,24 +23,24 @@ var iso = function($)
                         {url: '/intro/?page=begin_quiz', item_type:'begin_quiz', answers: [ 'Begin Quiz' ], noSkip: true}
                 ],
                 quizitemList: Array(),
-                currentItem: 3,
+                currentItem: 0, // use to skip intros
                 settings:
                 {
                         serverUrl: "http://localhost:8080",
-                        autoStart: true, // debugging only
+                        autoStart: false, // debugging only?
                         initDone: false,
                         startTime: (new Date()),
-                        timeoutDuration: 20000,
-                        proficiencies: Array(),
-                        sessionToken: "",
-                        instructions:
+                        timeoutDuration: 20000, // time to answer question
+                        proficiencies: Array(), // deprecated?
+                        sessionToken: "", // provided by server to load and answer questions
+                        instructions: // track progress through instruction
                         {
-                                completed: false,
-                                i1complete: false,
-                                i2timedOut: false
+                                completed: false, // all done?
+                                i1complete: false, // first done?
+                                i2timedOut: false // second done?
                         }
                 },
-                specialTimers:
+                specialTimers: // always for special actions on timeout "quiz_item.item_type": function() {}
                 {
                         "instructions2": function()
                         {
@@ -48,7 +52,7 @@ var iso = function($)
                         }
                 },
                 quizItem: Object(),
-                proficiencies:
+                proficiencies: // hardcoded proficiencies, will come from server in the future
                 [
                         "Freebase",
                         "Building Webapps",
@@ -60,22 +64,26 @@ var iso = function($)
         // then call $.plopquiz.start, which actually deals with CSS and loading the quiz
         $.plopquiz.init = function()
         {
+                // preload the quiz frame for quick start
                 $.ajax({
                         url: $.plopquiz.settings.serverUrl + '/quiz_frame',
                         dataType: "jsonp",
                         error: console.log,
                         success: function(html,status)
                         {
+                                // add to body to overlay is in front
                                 $("body").append(html);
 
-                                $("#quiz_overlay").css('height', $(document).height());
+                                // resize overlay to document not window
+                                $("#quiz_overlay").css("height", $(document).height());
 
-                                $('#quiz_wrap')
-                                        .bind('quizstarting', function()
+                                // stating and stoping quiz
+                                $("#quiz_wrap")
+                                        .bind("quizstarting", function()
                                         {
                                                 $(this).show();
                                         })
-                                        .bind('quizclosing', function()
+                                        .bind("quizclosing", function()
                                         {
                                                 $(this).hide();
 
@@ -83,13 +91,15 @@ var iso = function($)
                                                 $.plopquiz.currentItem = 0;
                                         });
 
-                                $('#quiz_close').click(function()
+                                // close button
+                                $("#quiz_close").click(function()
                                 {
-                                        $.event.trigger('quizclosing');
+                                        $.event.trigger("quizclosing");
                                         
                                         //window.location = "/preview/";
                                 });
 
+                                // timer controls. listenes for startTimer, loadingQuizItem, submitingAnswer
                                 $("#quiz_timer")
                                         .bind("startTimer", function(event, quizItem)
                                         {
@@ -100,43 +110,49 @@ var iso = function($)
                                                 // reset and start timer.
                                                 var reset = function()
                                                 {
-                                                        $('.timer_inner', self).stop();
+                                                        // stop to prevent ghost run outs
+                                                        $(".timer_inner", self).stop();
                                                         
-                                                        $('.timer_inner', self)
-                                                                .css('width', '100%');
+                                                        // resize
+                                                        $(".timer_inner", self)
+                                                                .css("width", "100%");
                                                                 
-                                                                if (quizItem.item_type == "quiz_item")
-								{
-									$.plopquiz.settings.timer_width = $('.timer_bar').width(); // to calculate score
-									$('#quiz_answers').find('div').addClass('disabled');
-								}
-                                                                
-                                                                $('.timer_inner', self).animate(
+                                                        if (quizItem.item_type == "quiz_item")
+                                                        {
+                                                                $.plopquiz.settings.timer_width = $(".timer_bar").width(); // to calculate score
+                                                                $("#quiz_answers").find("div").addClass("disabled");
+                                                        }
+                                                        
+                                                        // start running the timer down
+                                                        $(".timer_inner", self).animate(
+                                                        {
+                                                                width: 0
+                                                        },
+                                                        {
+                                                                complete: function()
                                                                 {
-                                                                        width: 0
+                                                                        // this should (could?) be a special, only used on instruction2
+                                                                        if(quizItem.timeout == "reset")
+                                                                        {
+                                                                                if(quizItem.timed)
+                                                                                        $.plopquiz.specialTimers[quizItem.timed]();
+
+                                                                                $(self).stop();
+                                                                                
+                                                                                return reset();
+                                                                        }
+
+                                                                        // when ever this is reach, fail the question
+                                                                        $.plopquiz.submitAnswer("skip");
                                                                 },
-                                                                {
-									complete: function()
-									{
-										if(quizItem.timeout == "reset")
-										{
-											if(quizItem.timed)
-												$.plopquiz.specialTimers[quizItem.timed]();
-
-                                                                                        $(self).stop();
-                                                                                        
-                                                                                        return reset();
-										}
-
-										$.plopquiz.submitAnswer("skip");
-									},
-									duration: $.plopquiz.settings.timeoutDuration,
-									easing: 'linear'
-                                                                })
-                                                                .show();
+                                                                duration: $.plopquiz.settings.timeoutDuration,
+                                                                easing: "linear"
+                                                        })
+                                                        .show();
 						}
                                                 reset();
                                         })
+                                        // these probably do the same thing
                                         .bind('loadingQuizItem', function()
                                         {
                                                 $('.timer_inner', this).stop();
@@ -145,37 +161,49 @@ var iso = function($)
                                         {
                                                 $('.timer_inner', this).stop();
                                         });
-
-                               
+                                
+                                // totally useless?
                                 //var textHolder = $('#blank').text();
                                 var textHolder = '     ';
 
                                 $('#quiz_answers .answer').hover(function()
                                 {
-                                	if ($(this).attr('id') == 'skip')  return;
-					var blank_width = 12 * $('.answertext', this).text().length; //todo: multiplier may need adjustment
-					$('#blank').html($('.answertext', this).text().replace(/\ /g, "&nbsp;"))
-					.css("cssText", "width: " + blank_width + "px !important;");                                        
+                                        // skip doesn't have hover
+                                	if ($(this).attr("id") == "skip")
+                                                return;
+
+					var blank_width = 12 * $(".answertext", this).text().length; //todo: multiplier may need adjustment
+
+					$("#blank")
+                                                .html($(".answertext", this)
+                                                .text().replace(/\ /g, "&nbsp;"))
+                                                .css("cssText", "width: " + blank_width + "px !important;");                                        
                                 },
                                 function()
                                 {
-                                       $('#blank').text(textHolder)
-                                       //.css({'padding': '0px 34px'});
-                                      .css({'width': '100px'});
+                                        // replace blank space
+                                        $("#blank").text(textHolder)
+                                        //.css({"padding": "0px 34px"});
+                                                .css("width", "100px");
                                 })
                                 .click(function(e)
                                 {
+                                        // data("disabled") prevents double submitions
                                         if($(this).data("disabled") != true)
                                                 $.plopquiz.submitAnswer($(this).find('div.answertext').text().replace(/\n/g,"")); 
                                         
+                                        // disable all the answers
                                         $.event.trigger("disableAnswers");
                                 })
                                 .bind("disableAnswers", function()
                                 {
-                                        $(this).data("disabled", true);
+                                        // reset in loadItem
+                                        if($.plopquiz.quizItem.item_type == "quiz_item")
+                                                $(this).data("disabled", true);
                                 });
 
                                 $("#quiz_content")
+                                        // when the item is loaded, opac fade in, then trigger startTimer
                                         .bind("quizItemLoaded", function(e, quizItem)
                                         {
                                                 $('#quiz_content').animate(
@@ -192,7 +220,8 @@ var iso = function($)
                                                 $('#quiz_answers').find('div').removeClass('disabled');
 
                                         });
-
+                                
+                                // mostly debugging
                                 if($.plopquiz.settings.autoStart)
                                         $.plopquiz.start();
                         }
@@ -200,28 +229,36 @@ var iso = function($)
 
                 var jsonpcallback = false;
 
+                // this is a jQuery JSONP timeout hack
                 for(var i in window)
                 {
+                        // if it starts with jsonp, keep going, we want the last one
                         if(i.substring(0,5) == "jsonp")
                                 jsonpcallback = i;
                 }
                 
+                // this should be the last (if any) jsonp123blah123 callback
                 if(jsonpcallback)
+                        // if the callback still exists after 6 seconds, time it out
                         var timewatch = setTimeout(function()
                         {
+                                // still there?
                                 if(window[jsonpcallback] != "undefined")
                                         $("#pqwidget").append(
                                                 $("<a href=\"http://www.plopquiz.com\">Visit PlopQuiz</a>").hide().fadeIn()
                                         );
                         }, 6000);
 
+                // second part of the hack, find the script with the same callback in the src and setup onload
                 $("script").each(function()
                 {
                         if(this.src.indexOf(jsonpcallback) > -1)
                                 this.onload = function()
                                 {
+                                        // the script just loaded so stop the timeout
                                         clearTimeout(timewatch);
 
+                                        // yay the widget script loaded, setup the start handler
                                         $("#pqwidget").append(
                                                 $("<div id\"takeQuiz\">Take PlopQuiz</div>").click($.plopquiz.start)
                                         );
@@ -231,6 +268,7 @@ var iso = function($)
 
         $.plopquiz.start = function()
         {
+                // if the click handler is setup before the frame loads, wait for it
                 if($("#quiz_wrap").length > 0)
                         $.plopquiz.loadItem();
                 else
@@ -239,27 +277,35 @@ var iso = function($)
 
         $.plopquiz.loadItem = function(quizItem)
         {
+                // this could use some clean up, the transistions between hard code and real quizItem is a bit funky
                 var quizItem = $.plopquiz.quizItem = ((quizItem && quizItem.answers) ? quizItem : $.plopquiz.fetchNextItem());
 
                 if(!quizItem)
                         return;
 
+                // hardcoded versus server provided
                 quizItem["url"] = quizItem.url ? quizItem.url : "/quiz_item/?token=" + $.plopquiz.settings.sessionToken;
 
+                // heeaayy, we're loading a quiz item
                 $.event.trigger('loadingQuizItem');
+
+                // load from the server not the widget location
                 $.ajax({
                         url: $.plopquiz.settings.serverUrl + quizItem.url,
                         dataType: "jsonp",
                         success: function(html, s)
                         {
+                                // set the quiz content
                                 $('#quiz_content')
                                         .html(html);
 
+                                // hide the answers fro now
                                 $('#quiz_answers .answer')
                                         .hide()
 
                                 for ( var i in quizItem.answers )
                                 {
+                                        // 1,2 or 3 answers are okay
 					/* some settings... */
 					$('#quiz_content').attr('class', quizItem.item_type + '_content');
 					$('#quiz_answers').attr('class', quizItem.item_type + '_answers');
@@ -276,16 +322,19 @@ var iso = function($)
 
 					this_answer
 						.show()
+                                                // reenable the button, clickity click
                                                 .data("disabled", false)
 						.find(".answertext")
 						.html(quizItem.answers[i]);
                                 }
 
+                                // not all items are timed (instructions)
                                 if(quizItem.timed)
                                         $("#quiz_timer").show();
                                 else
                                         $("#quiz_timer").hide();
-                               
+                                
+                                // not all items need skipping
                                 if(!quizItem.noSkip)
                                         $("#skip").show();
                                 else
@@ -299,16 +348,21 @@ var iso = function($)
 
 				if(quizItem.item_type == "intro")
                                 {
-					if (quizItem.vendor.length > 1){ $('p#employer').find('b').text(quizItem.vendor); }
+					if (quizItem.vendor.length > 1)
+                                        {
+                                                $('p#employer').find('b').text(quizItem.vendor);
+                                        }
 				}
                                 	
                                 if(quizItem.item_type == "instructions")
                                 {
+                                        //special handler for instructions 1 hovering
                                         var i1mouseOverCount = 0;
                                         var i1mouseOver = function()
                                         {
                                                 // unbind is to prevent incrementing on the same button
                                                 $(this).unbind('mouseover',i1mouseOver);
+                                                // both buttons have been hovered? good done
                                                 if(++i1mouseOverCount >= 2)
                                                 {
                                                         $('#example_1,#example_2').toggle();
@@ -328,6 +382,7 @@ var iso = function($)
                                 if(quizItem.item_type == "begin_quiz")
                                 {
 					var p = {};
+                                        // this is a bit hacked together, later the proficiencies will be loaded from the server
                                         for(var i in $.plopquiz.proficiencies)
                                                 $("#proficiency_choices")
                                                         .append('<input type="checkbox" value="' + $.plopquiz.proficiencies[i] + '" checked /><span class="proficiency">' + $.plopquiz.proficiencies[i] + '</span><br />');
@@ -335,7 +390,9 @@ var iso = function($)
                                 
                                 if(quizItem.item_type == "quiz_item")
                                 {
+                                        // reset the blank space
                                         $('#blank').empty();
+                                        // hide the question until everything is loaded
                                         $('#quiz_content')
                                                 .css('opacity', 0);
                                 }
@@ -349,14 +406,18 @@ var iso = function($)
                                                 var current_id  = $(this).attr('id');
                                                 var next_id  = parseInt(current_id) + 1;
                                                 
+                                                // last page of signup?
                                                 if ($('form.signup').find('ul#' + next_id).length == 0)
                                                 {
                                                         var args = {};
+                                                        // form elements to be submited
                                                         var aargs = Array("name", " email", " occupation", " work_status", " webpage", " loc")
 
+                                                        // this can be refined
                                                         for(var i in aargs)
                                                                 args["arg" + i] = "\"" + $("#" + aargs[i]).val() + "\"";
 
+                                                        // submit the registration, all RPC calls should be moved to a single location
                                                         $.ajax(
                                                         {
                                                                 url: $.plopquiz.settings.serverUrl + "/quiztaker/rpc",
@@ -374,6 +435,7 @@ var iso = function($)
                                                         return;
                                                 }
 
+                                                // are there every more then one page?
                                                 $('form.signup').find('ul#' + current_id).fadeOut(200, function()
                                                 {
                                                         $('form.signup').find('ul#' + next_id).fadeIn(200);
@@ -383,6 +445,7 @@ var iso = function($)
                                         });      
                                 }                
 
+                                // start the quiz now
                                 $.event.trigger('quizstarting');
 
                                 // short delay to ensure everything is loaded
@@ -440,6 +503,9 @@ var iso = function($)
                                 $('#proficiency_choices input:checked').each(function() { $.plopquiz.settings.proficiencies.push($(this).val()); });
                                 $('.timer_bar').css('width', '100%'); 
 
+                                // this start the server session and retrieves the first questions
+                                // this can be refined
+                                // all RPC calls should be moved to one location
                                 $.ajax(
                                 {
                                         url: $.plopquiz.settings.serverUrl + "/quiztaker/rpc",
@@ -451,15 +517,19 @@ var iso = function($)
                                         },
                                         success: function(rpc)
                                         {
+                                                // the the session token to submit answers and load quiz content
                                                 if(rpc.token)
                                                         $.plopquiz.settings.sessionToken = rpc.token;
 
+                                                // just echo what we send
                                                 // reset the proficiencies here incase the server returns something different
                                                 if(rpc.proficiencies)
                                                         $.plopquiz.proficiencies = rpc.proficiencies;
 
+                                                // instructions are done, we can skip them if the test is reset
                                                 $.plopquiz.settings.instructions.completed = true;
 
+                                                // load the first question
                                                 $.plopquiz.loadItem();
                                         }
                                 });
@@ -570,21 +640,9 @@ function addStyle(src)
         pqjs.parentNode.appendChild(s);
 }
 
-addStyle("pqwidget.css");
-
-if(window.jQuery)
-{
-        pqLoad();
-}
-else
-{
-        addScript("jquery.js");
-
-        setTimeout(waitForJQ, 60);
-}
-
 function waitForJQ()
 {
+        // loaded yet? Yes? good continue. No? keep waiting
         if(window.jQuery)
                 pqLoad();
         else
@@ -593,6 +651,27 @@ function waitForJQ()
 
 function pqLoad()
 {
+        // force ready jQuery because page load is (likely?) done
         jQuery.isReady = true;
-        iso(jQuery);
+        // load plopquiz (modified) from within closure
+        iso(jQuery); // wtf does iso mean again?
+}
+
+// life begins here.
+// load styles right off the bat, no checks are done, if this doesn't load nothing likely will
+addStyle("pqwidget.css");
+
+// do we have jQuery on the page already?
+if(window.jQuery)
+{
+        // yup,
+        pqLoad();
+}
+else
+{
+        // no? load it from the same location as the widget
+        addScript("jquery.js");
+
+        // check in 6ms
+        setTimeout(waitForJQ, 60);
 }
