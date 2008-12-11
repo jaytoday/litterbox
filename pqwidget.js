@@ -447,7 +447,8 @@ var iso = function($)
                                 // ajax call to submit -- (answer, key, vendor)
                                 var this_item = $.plopquiz.quizItem;
                                 var timer_status = $('.timer_bar').width()/$.plopquiz.settings.timer_width;
-                                var user = "" //TODO: pass user data, if user is logged in. 
+                                var user = "" //TODO: retrieve user token, if user is logged in. 
+                                var vendor = "" //TODO: retrieve vendor token.
 
                                 $.ajax(
                                 {
@@ -460,7 +461,7 @@ var iso = function($)
                                                 arg1: timer_status,
                                                 arg2: "\"" + $.plopquiz.settings.sessionToken + "\"",
                                                 arg3: "\"" + user + "\"",
-                                                arg4: "\"\""
+                                                arg4: "\"" + vendor + "\""
                                         },
                                         success: function(obj)
                                         {
