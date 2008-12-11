@@ -541,6 +541,14 @@ td#choose_quiz{
         width:33px;
 }
 
+.quiz_intro_text #skip_tutorial{
+cursor:pointer;
+float:right;
+font-size:0.6em !important;
+height:0;
+margin:-48px -10px !important;
+color:#666 !important;
+}
 
 
 
@@ -710,7 +718,7 @@ margin: 11px 4px;
 #quiz_wrap div.quiz_frame_content
 {
         border:5px solid #DDDDDD;
-        height:200px;
+        height:220px;
         margin-top:10px;
         padding:10px;
         background:#ffffff none repeat scroll 0 0;
@@ -791,7 +799,7 @@ left:66px;
 	/* overflow: hidden; -used for jscrollpane */
 	z-index: 1;
 	height:190px;
-    overflow-y:scroll;
+    overflow-y:auto;
 
 }
 
@@ -818,7 +826,7 @@ height:220px !important;
 #quiz_wrap b
 {
         color:#400059;
-        font-size:1.1em;
+        font-size:1.1em !important;
 }
 
 #quiz_wrap b:hover
@@ -849,12 +857,13 @@ p.quiz_distributor
         width:90%;
 }
 
-p.quiz_header
+p#quiz_header
 {
-        /* color:#6E0BC3; */
-        font-size:1em;
-        font-variant:small-caps;
+        font-size:1.2em !important;
+        font-weight:bold !important;
+        font-variant:small-caps !important;
         line-height:0.8em;
+        color:#400059 !important;
         margin-bottom:5px !important;
 }
 
@@ -1173,7 +1182,7 @@ table, #quiz_wrap caption, #quiz_wrap tbody, #quiz_wrap tfoot, #quiz_wrap thead,
 	padding: 0;
 	border: 0;
 	outline: 0 ;
-	font-size: 16px !important;
+	font-size: 16px;
 /*	vertical-align: baseline; */
 	background: transparent;
 	text-decoration:none;

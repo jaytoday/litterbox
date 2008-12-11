@@ -158,7 +158,7 @@ var iso = function($)
                                 $('#quiz_answers .answer').hover(function()
                                 {
                                 	if ($(this).attr('id') == 'skip')  return;
-					var blank_width = 11 * $('.answertext', this).text().length; //todo: multiplier may need adjustment
+					var blank_width = 12 * $('.answertext', this).text().length; //todo: multiplier may need adjustment
 					$('#blank').html($('.answertext', this).text().replace(/\ /g, "&nbsp;"))
 					.css("cssText", "width: " + blank_width + "px !important;");                                        
                                 },
@@ -447,6 +447,7 @@ var iso = function($)
                                 // ajax call to submit -- (answer, key, vendor)
                                 var this_item = $.plopquiz.quizItem;
                                 var timer_status = $('.timer_bar').width()/$.plopquiz.settings.timer_width;
+                                var user = "" //TODO: pass user data, if user is logged in. 
 
                                 $.ajax(
                                 {
@@ -458,7 +459,8 @@ var iso = function($)
                                                 arg0: "\"" + answer + "\"",
                                                 arg1: timer_status,
                                                 arg2: "\"" + $.plopquiz.settings.sessionToken + "\"",
-                                                arg3: "\"\""
+                                                arg3: "\"" + user + "\"",
+                                                arg4: "\"\""
                                         },
                                         success: function(obj)
                                         {
