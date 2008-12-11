@@ -220,7 +220,7 @@ var iso = function($)
                                                 $('#quiz_answers').find('div').removeClass('disabled');
 
                                         });
-                                
+
                                 // mostly debugging
                                 if($.plopquiz.settings.autoStart)
                                         $.plopquiz.start();
@@ -371,12 +371,24 @@ var iso = function($)
                                                 }
                                         };
 
+                                        $("#skip_tutorial").click(function()
+                                        {
+                                                $.plopquiz.currentItem = 3;
+                                                $.plopquiz.loadItem();
+                                        });
+
                                         $("#quiz_answers .answer").mouseover(i1mouseOver);
                                 }
                                 
 				if(quizItem.item_type == "instructions2")
                                 {
-                                       $('a#skip').hide(); 
+                                        $('a#skip').hide(); 
+
+                                        $("#skip_tutorial").click(function()
+                                        {
+                                                $.plopquiz.currentItem = 3;
+                                                $.plopquiz.loadItem();
+                                        });
                                 }
 
                                 if(quizItem.item_type == "begin_quiz")
