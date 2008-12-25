@@ -4,5 +4,11 @@ runtime: python
 api_version: 1
 
 handlers:
+
+- url: /load
+  script: load_wex.py
+
+
 - url: .*
   script: main.py
+  
